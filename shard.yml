@@ -1,8 +1,10 @@
 name: similar
 version: 0.1.0
 
+description: Crystal port of the similar diff library
+
 authors:
-  - your-name-here <your-email-here>
+  - dsisnero <dsisnero@gmail.com>
 
 targets:
   similar:
