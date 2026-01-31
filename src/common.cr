@@ -66,6 +66,7 @@ module Similar
   def self.group_diff_ops(ops : Array(DiffOp), n : Int32) : Array(Array(DiffOp))
     return [] of Array(DiffOp) if ops.empty?
 
+    # Create a mutable copy of ops
     ops = ops.dup
     pending_group = [] of DiffOp
     rv = [] of Array(DiffOp)
@@ -74,16 +75,19 @@ module Similar
     if first = ops.first
       if first.is_a?(DiffOp::Equal)
         offset = Math.max(0, first.len - n)
-        first.old_index += offset
-        first.new_index += offset
-        first.len -= offset
+        if offset > 0
+          ops[0] = DiffOp::Equal.new(first.old_index + offset, first.new_index + offset, first.len - offset)
+        end
       end
     end
 
     # Adjust last equal op
     if last = ops.last
       if last.is_a?(DiffOp::Equal)
-        last.len -= Math.max(0, last.len - n)
+        trim = Math.max(0, last.len - n)
+        if trim > 0
+          ops[-1] = DiffOp::Equal.new(last.old_index, last.new_index, last.len - trim)
+        end
       end
     end
 
@@ -98,17 +102,17 @@ module Similar
           pending_group << DiffOp::Equal.new(old_index, new_index, n)
           rv << pending_group
           offset = Math.max(0, len - n)
-          pending_group = [DiffOp::Equal.new(old_index + offset, new_index + offset, len - offset)]
+          pending_group = [] of DiffOp
+          pending_group << DiffOp::Equal.new(old_index + offset, new_index + offset, len - offset)
           next
         end
       end
       pending_group << op
     end
 
-    case pending_group
-    when [] of DiffOp
+    if pending_group.empty?
       # nothing
-    when [DiffOp::Equal]
+    elsif pending_group.size == 1 && pending_group[0].is_a?(DiffOp::Equal)
       # nothing
     else
       rv << pending_group

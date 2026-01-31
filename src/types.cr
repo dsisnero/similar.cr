@@ -17,6 +17,17 @@ module Similar
     Delete
     # The change indicates inserted text.
     Insert
+
+    # Returns the unified diff character for this tag.
+    def to_char : Char
+      case self
+      when Equal  then ' '
+      when Delete then '-'
+      when Insert then '+'
+      else
+        raise "Unexpected ChangeTag value"
+      end
+    end
   end
 
   # The tag of a diff operation.
@@ -30,6 +41,9 @@ module Similar
     # The diff op encodes a replaced segment.
     Replace
   end
+
+  # Alias for diff hook from algorithms module
+  alias DiffHook = Algorithms::DiffHook
 
   # Abstract base class for diff operations.
   abstract class DiffOp
@@ -53,6 +67,16 @@ module Similar
     # * `Equal`: `a[i1..i2]` is equal to `b[j1..j2]`.
     def as_tag_tuple : Tuple(DiffTag, Range(Int32, Int32), Range(Int32, Int32))
       {tag, old_range, new_range}
+    end
+
+    # Returns an iterator over the changes this operation expands to.
+    #
+    # This method is a convenient way to automatically resolve the different
+    # ways in which a change could be encoded (insert/delete vs replace), look
+    # up the value from the appropriate slice and also handle correct index
+    # handling.
+    def iter_changes(old, new)
+      ChangesIter(typeof(old), typeof(new), typeof(old[0])).new(old, new, self)
     end
 
     # Apply this operation to a diff hook.

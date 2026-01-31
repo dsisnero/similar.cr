@@ -23,6 +23,12 @@ require "./algorithms/mod"
 # Load common utilities
 require "./common"
 
+# Load iterators
+require "./iter"
+
+# Load text diffing
+require "./text/mod"
+
 module Similar
   VERSION = "0.1.0"
 end

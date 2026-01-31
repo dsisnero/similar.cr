@@ -104,4 +104,108 @@ module Similar::Algorithms
     result.sort_by!(&.original_index)
     result
   end
+
+  # Internal helper struct for offset indexing
+  private class OffsetLookup(Int)
+    getter offset : Int32
+    getter vec : Array(Int)
+
+    def initialize(@offset : Int32, @vec : Array(Int))
+    end
+
+    def [](index : Int32) : Int
+      @vec[index - @offset]
+    end
+  end
+
+  # A utility struct to convert distinct items to unique integers.
+  #
+  # This can be helpful on larger inputs to speed up the comparisons
+  # performed by doing a first pass where the data set gets reduced
+  # to (small) integers.
+  #
+  # The idea is that instead of passing two sequences to a diffling algorithm
+  # you first pass it via `IdentifyDistinct`:
+  #
+  # ```
+  # old = ["foo", "bar", "baz"]
+  # new = ["foo", "blah", "baz"]
+  # h = IdentifyDistinct(Int32).new(old, 0...old.size, new, 0...new.size)
+  # ops = Similar.capture_diff(
+  #   Algorithm::Myers,
+  #   h.old_lookup,
+  #   h.old_range,
+  #   h.new_lookup,
+  #   h.new_range
+  # )
+  # ```
+  #
+  # The indexes are the same as with the passed source ranges.
+  class IdentifyDistinct(Int)
+    @old : OffsetLookup(Int)
+    @new : OffsetLookup(Int)
+
+    # Creates an int hasher for two sequences.
+    def self.new(old, old_range : Range(Int32, Int32), new, new_range : Range(Int32, Int32)) : self
+      new(old, old_range, new, new_range)
+    end
+
+    def initialize(old, old_range : Range(Int32, Int32), new, new_range : Range(Int32, Int32))
+      # Ensure ranges are exclusive
+      old_range = old_range.begin...old_range.end
+      new_range = new_range.begin...new_range.end
+
+      # We assume old and new have the same element type
+      map = Hash(typeof(old[old_range.begin]), Int).new
+      old_seq = [] of Int
+      new_seq = [] of Int
+      next_id = Int.zero
+      step = Int.new(1)
+
+      old_range.each do |idx|
+        item = old[idx]
+        id = map.fetch(item) do
+          new_id = next_id
+          next_id += step
+          map[item] = new_id
+          new_id
+        end
+        old_seq << id
+      end
+
+      new_range.each do |idx|
+        item = new[idx]
+        id = map.fetch(item) do
+          new_id = next_id
+          next_id += step
+          map[item] = new_id
+          new_id
+        end
+        new_seq << id
+      end
+
+      @old = OffsetLookup(Int).new(old_range.begin, old_seq)
+      @new = OffsetLookup(Int).new(new_range.begin, new_seq)
+    end
+
+    # Returns a lookup for the old side.
+    def old_lookup : OffsetLookup(Int)
+      @old
+    end
+
+    # Returns a lookup for the new side.
+    def new_lookup : OffsetLookup(Int)
+      @new
+    end
+
+    # Convenience method to get back the old range.
+    def old_range : Range(Int32, Int32)
+      @old.offset...(@old.offset + @old.vec.size)
+    end
+
+    # Convenience method to get back the new range.
+    def new_range : Range(Int32, Int32)
+      @new.offset...(@new.offset + @new.vec.size)
+    end
+  end
 end
