@@ -26,7 +26,7 @@ module Similar
 
     def to_s(io : IO) : Nil
       beginning = @start + 1
-      len = @end - @start
+      len = Math.max(0, @end - @start)
       if len == 1
         io << beginning
       else

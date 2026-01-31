@@ -41,11 +41,56 @@ module Similar::Algorithms
     end
 
     def finish : Nil
-      # TODO: implement cleanup_diff_ops
+      cleanup_diff_ops(@old, @new, @ops)
       @ops.each do |op|
         op.apply_to_hook(@d)
       end
       @d.finish
+    end
+
+    private def cleanup_diff_ops(old, new, ops : Array(DiffOp)) : Nil
+      # Simplified cleanup: swap Insert and Delete when Insert comes before Delete
+      i = 0
+      while i < ops.size
+        op = ops[i]
+        if i > 0 && op.tag == DiffTag::Delete && ops[i - 1].tag == DiffTag::Insert
+          # Swap Insert and Delete
+          ops[i - 1], ops[i] = ops[i], ops[i - 1]
+          i -= 1 if i > 1
+        elsif i > 0 && op.tag == DiffTag::Insert && ops[i - 1].tag == DiffTag::Delete
+          # Already Delete before Insert, good
+        end
+        i += 1
+      end
+
+      # Merge consecutive inserts or deletes
+      i = 0
+      while i < ops.size
+        op = ops[i]
+        if i > 0 && op.tag == ops[i - 1].tag
+          case op.tag
+          when DiffTag::Insert
+            prev = ops[i - 1].as(DiffOp::Insert)
+            curr = op.as(DiffOp::Insert)
+            # Check if they are adjacent
+            if prev.new_index + prev.new_len == curr.new_index && prev.old_index == curr.old_index
+              # Merge
+              ops[i - 1] = DiffOp::Insert.new(prev.old_index, prev.new_index, prev.new_len + curr.new_len)
+              ops.delete_at(i)
+              next
+            end
+          when DiffTag::Delete
+            prev = ops[i - 1].as(DiffOp::Delete)
+            curr = op.as(DiffOp::Delete)
+            if prev.old_index + prev.old_len == curr.old_index && prev.new_index == curr.new_index
+              ops[i - 1] = DiffOp::Delete.new(prev.old_index, prev.old_len + curr.old_len, prev.new_index)
+              ops.delete_at(i)
+              next
+            end
+          end
+        end
+        i += 1
+      end
     end
 
     # Extracts the inner hook.
