@@ -41,4 +41,39 @@ module Similar
       @value.hash(hasher)
     end
   end
+
+  # Wrapper for byte slices to satisfy DiffableStr.
+  struct BytesWrapper
+    include DiffableStr
+
+    getter value : Bytes
+
+    def initialize(@value : Bytes)
+    end
+
+    def size : Int32
+      @value.size.to_i32
+    end
+
+    def [](index : Int32) : Char
+      @value[index].chr
+    end
+
+    def slice(range : Range(Int32, Int32)) : self
+      slice = @value[range]?
+      BytesWrapper.new(slice || Bytes.new(0))
+    end
+
+    def to_s : String
+      String.new(@value, "UTF-8", invalid: :skip)
+    end
+
+    def ==(other : self) : Bool
+      @value == other.value
+    end
+
+    def hash(hasher)
+      @value.hash(hasher)
+    end
+  end
 end

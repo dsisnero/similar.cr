@@ -41,6 +41,13 @@ module Similar
       TextDiff.new(old_tokens, new_tokens, @algorithm, true)
     end
 
+    # Creates a diff of lines for bytes.
+    def diff_lines(old : Bytes, new : Bytes) : TextDiff(BytesWrapper)
+      old_tokens = Text.tokenize_lines(old)
+      new_tokens = Text.tokenize_lines(new)
+      TextDiff(BytesWrapper).new(old_tokens, new_tokens, @algorithm, true)
+    end
+
     # Creates a diff of words.
     #
     # This splits the text into words and whitespace.
@@ -50,11 +57,25 @@ module Similar
       TextDiff.new(old_tokens, new_tokens, @algorithm, false)
     end
 
+    # Creates a diff of words for bytes.
+    def diff_words(old : Bytes, new : Bytes) : TextDiff(BytesWrapper)
+      old_tokens = Text.tokenize_words(old)
+      new_tokens = Text.tokenize_words(new)
+      TextDiff(BytesWrapper).new(old_tokens, new_tokens, @algorithm, false)
+    end
+
     # Creates a diff of characters.
     def diff_chars(old : String, new : String) : TextDiff(String)
       old_tokens = Text.tokenize_chars(old)
       new_tokens = Text.tokenize_chars(new)
       TextDiff.new(old_tokens, new_tokens, @algorithm, false)
+    end
+
+    # Creates a diff of bytes.
+    def diff_chars(old : Bytes, new : Bytes) : TextDiff(BytesWrapper)
+      old_tokens = Text.tokenize_chars(old)
+      new_tokens = Text.tokenize_chars(new)
+      TextDiff(BytesWrapper).new(old_tokens, new_tokens, @algorithm, false)
     end
 
     # Creates a diff of unicode words.
@@ -110,13 +131,28 @@ module Similar
       configure.diff_lines(old, new)
     end
 
+    # Creates a diff of lines for bytes.
+    def self.from_lines(old : Bytes, new : Bytes) : TextDiff(BytesWrapper)
+      configure.diff_lines(old, new)
+    end
+
     # Creates a diff of words.
     def self.from_words(old : String, new : String) : TextDiff(String)
       configure.diff_words(old, new)
     end
 
+    # Creates a diff of words for bytes.
+    def self.from_words(old : Bytes, new : Bytes) : TextDiff(BytesWrapper)
+      configure.diff_words(old, new)
+    end
+
     # Creates a diff of chars.
     def self.from_chars(old : String, new : String) : TextDiff(String)
+      configure.diff_chars(old, new)
+    end
+
+    # Creates a diff of bytes.
+    def self.from_chars(old : Bytes, new : Bytes) : TextDiff(BytesWrapper)
       configure.diff_chars(old, new)
     end
 
