@@ -1,4 +1,5 @@
 require "./utils"
+require "./inline"
 require "../udiff"
 
 module Similar
@@ -181,6 +182,14 @@ module Similar
     # Returns a unified diff formatter.
     def unified_diff : UnifiedDiff
       UnifiedDiff.new(self)
+    end
+
+    # Iterates over inline changes for a diff operation.
+    #
+    # This is like `iter_changes` but with inline highlight info for
+    # replace operations.
+    def iter_inline_changes(op : DiffOp) : Array(InlineChange)
+      Similar.iter_inline_changes(self, op)
     end
   end
 end

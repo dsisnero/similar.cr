@@ -46,6 +46,32 @@ describe Similar::Text do
       Similar::Text.ends_with_newline("hello").should be_false
     end
   end
+
+  describe "tokenize_unicode_words" do
+    it "splits by character categories" do
+      result = Similar::Text.tokenize_unicode_words("Hello World!")
+      result.should eq(["Hello", " ", "World", "!"])
+    end
+
+    it "handles unicode characters" do
+      result = Similar::Text.tokenize_unicode_words("abcfö❄️")
+      # Letters are all alphanumeric category, snowflake + variation selector are "other" category
+      result.should eq(["abcfö", "❄️"])
+    end
+  end
+
+  describe "tokenize_graphemes" do
+    it "splits into grapheme clusters" do
+      result = Similar::Text.tokenize_graphemes("abcfö❄️")
+      result.should eq(["a", "b", "c", "f", "ö", "❄️"])
+    end
+
+    it "combines base characters with combining marks" do
+      # c with cedilla (U+0327) - should be one grapheme
+      result = Similar::Text.tokenize_graphemes("c\u{0327}")
+      result.should eq(["c\u{0327}"])
+    end
+  end
 end
 
 describe Similar::TextDiff do
@@ -299,4 +325,68 @@ describe Similar::TextDiff do
   end
 
   # Add other newline termination tests here
+
+  it "test_line_ops_inline" do
+    diff = Similar::TextDiff.from_lines(
+      "Hello World\nsome stuff here\nsome more stuff here\n\nAha stuff here\nand more stuff",
+      "Stuff\nHello World\nsome amazing stuff here\nsome more stuff here\n"
+    )
+    diff.newline_terminated.should be_true
+
+    changes = [] of Similar::InlineChange
+    diff.ops.each do |op|
+      changes.concat(diff.iter_inline_changes(op))
+    end
+
+    # Based on Rust snapshot (similar__text__inline__line_ops_inline.snap)
+    changes.size.should eq(8)
+
+    # First change: Insert "Stuff\n"
+    changes[0].tag.should eq(Similar::ChangeTag::Insert)
+    changes[0].old_index.should be_nil
+    changes[0].new_index.should eq(0)
+    changes[0].values.should eq([{false, "Stuff\n"}])
+
+    # Second change: Equal "Hello World\n"
+    changes[1].tag.should eq(Similar::ChangeTag::Equal)
+    changes[1].old_index.should eq(0)
+    changes[1].new_index.should eq(1)
+    changes[1].values.should eq([{false, "Hello World\n"}])
+
+    # Third change: Delete "some stuff here\n" (split into two parts)
+    changes[2].tag.should eq(Similar::ChangeTag::Delete)
+    changes[2].old_index.should eq(1)
+    changes[2].new_index.should be_nil
+    changes[2].values.should eq([{false, "some "}, {false, "stuff here\n"}])
+
+    # Fourth change: Insert "some amazing stuff here\n" with "amazing " emphasized
+    changes[3].tag.should eq(Similar::ChangeTag::Insert)
+    changes[3].old_index.should be_nil
+    changes[3].new_index.should eq(2)
+    changes[3].values.should eq([{false, "some "}, {true, "amazing "}, {false, "stuff here\n"}])
+
+    # Fifth change: Equal "some more stuff here\n"
+    changes[4].tag.should eq(Similar::ChangeTag::Equal)
+    changes[4].old_index.should eq(2)
+    changes[4].new_index.should eq(3)
+    changes[4].values.should eq([{false, "some more stuff here\n"}])
+
+    # Sixth change: Delete "\n"
+    changes[5].tag.should eq(Similar::ChangeTag::Delete)
+    changes[5].old_index.should eq(3)
+    changes[5].new_index.should be_nil
+    changes[5].values.should eq([{false, "\n"}])
+
+    # Seventh change: Delete "Aha stuff here\n"
+    changes[6].tag.should eq(Similar::ChangeTag::Delete)
+    changes[6].old_index.should eq(4)
+    changes[6].new_index.should be_nil
+    changes[6].values.should eq([{false, "Aha stuff here\n"}])
+
+    # Eighth change: Delete "and more stuff"
+    changes[7].tag.should eq(Similar::ChangeTag::Delete)
+    changes[7].old_index.should eq(5)
+    changes[7].new_index.should be_nil
+    changes[7].values.should eq([{false, "and more stuff"}])
+  end
 end

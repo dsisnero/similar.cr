@@ -61,4 +61,15 @@ describe Similar::UnifiedDiff do
       output.should contain("+\r")
     end
   end
+
+  it "handles missing newline hint" do
+    diff = Similar::TextDiff.from_lines("a\n", "b")
+    udiff = diff.unified_diff.header("a.txt", "b.txt")
+    output = udiff.to_s
+    output.should eq("--- a.txt\n+++ b.txt\n@@ -1 +1 @@\n-a\n+b\n\\ No newline at end of file\n")
+
+    udiff2 = diff.unified_diff.missing_newline_hint(false).header("a.txt", "b.txt")
+    output2 = udiff2.to_s
+    output2.should eq("--- a.txt\n+++ b.txt\n@@ -1 +1 @@\n-a\n+b")
+  end
 end
