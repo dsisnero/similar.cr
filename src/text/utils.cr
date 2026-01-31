@@ -177,7 +177,7 @@ module Similar::Text
   end
 
   # Quick and dirty way to get an upper sequence ratio.
-  def self.upper_seq_ratio(seq1 : Array(String), seq2 : Array(String)) : Float32
+  def self.upper_seq_ratio(seq1 : Array(T), seq2 : Array(T)) : Float32 forall T
     n = seq1.size + seq2.size
     if n == 0
       1.0_f32
@@ -192,26 +192,26 @@ module Similar::Text
   #
   # It counts the number of matches without regard to order, which is an
   # obvious upper bound.
-  class QuickSeqRatio
-    @counts : Hash(String, Int32)
+  class QuickSeqRatio(T)
+    @counts : Hash(T, Int32)
 
-    def initialize(seq : Array(String))
-      counts = Hash(String, Int32).new(0)
-      seq.each do |word|
-        counts[word] += 1
+    def initialize(seq : Array(T))
+      counts = Hash(T, Int32).new(0)
+      seq.each do |item|
+        counts[item] += 1
       end
       @counts = counts
     end
 
-    def calc(seq : Array(String)) : Float32
+    def calc(seq : Array(T)) : Float32
       n = @counts.size + seq.size
       return 1.0_f32 if n == 0
 
-      available = Hash(String, Int32).new(0)
+      available = Hash(T, Int32).new(0)
       matches = 0
-      seq.each do |word|
-        x = available.fetch(word, @counts[word])
-        available[word] = x - 1
+      seq.each do |item|
+        x = available.fetch(item, @counts[item])
+        available[item] = x - 1
         matches += 1 if x > 0
       end
 

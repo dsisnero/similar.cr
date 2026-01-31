@@ -1,3 +1,4 @@
+require "./abstraction"
 require "./utils"
 require "./inline"
 require "../udiff"
@@ -34,7 +35,7 @@ module Similar
     #
     # This splits the text `old` and `new` into lines preserving newlines
     # in the input.
-    def diff_lines(old : String, new : String) : TextDiff
+    def diff_lines(old : String, new : String) : TextDiff(String)
       old_tokens = Text.tokenize_lines(old)
       new_tokens = Text.tokenize_lines(new)
       TextDiff.new(old_tokens, new_tokens, @algorithm, true)
@@ -43,14 +44,14 @@ module Similar
     # Creates a diff of words.
     #
     # This splits the text into words and whitespace.
-    def diff_words(old : String, new : String) : TextDiff
+    def diff_words(old : String, new : String) : TextDiff(String)
       old_tokens = Text.tokenize_words(old)
       new_tokens = Text.tokenize_words(new)
       TextDiff.new(old_tokens, new_tokens, @algorithm, false)
     end
 
     # Creates a diff of characters.
-    def diff_chars(old : String, new : String) : TextDiff
+    def diff_chars(old : String, new : String) : TextDiff(String)
       old_tokens = Text.tokenize_chars(old)
       new_tokens = Text.tokenize_chars(new)
       TextDiff.new(old_tokens, new_tokens, @algorithm, false)
@@ -59,7 +60,7 @@ module Similar
     # Creates a diff of unicode words.
     #
     # This splits the text into words according to unicode rules.
-    def diff_unicode_words(old : String, new : String) : TextDiff
+    def diff_unicode_words(old : String, new : String) : TextDiff(String)
       old_tokens = Text.tokenize_unicode_words(old)
       new_tokens = Text.tokenize_unicode_words(new)
       TextDiff.new(old_tokens, new_tokens, @algorithm, false)
@@ -68,28 +69,28 @@ module Similar
     # Creates a diff of graphemes.
     #
     # This splits the text into grapheme clusters.
-    def diff_graphemes(old : String, new : String) : TextDiff
+    def diff_graphemes(old : String, new : String) : TextDiff(String)
       old_tokens = Text.tokenize_graphemes(old)
       new_tokens = Text.tokenize_graphemes(new)
       TextDiff.new(old_tokens, new_tokens, @algorithm, false)
     end
 
     # Creates a diff of arbitrary slices.
-    def diff_slices(old : Array(String), new : Array(String)) : TextDiff
-      TextDiff.new(old, new, @algorithm, false)
+    def diff_slices(old : Array(T), new : Array(T)) : TextDiff(T) forall T
+      TextDiff(T).new(old, new, @algorithm, false)
     end
   end
 
   # Captures diff op codes for textual diffs.
-  class TextDiff
-    @old_tokens : Array(String)
-    @new_tokens : Array(String)
+  class TextDiff(T)
+    @old_tokens : Array(T)
+    @new_tokens : Array(T)
     @ops : Array(DiffOp)
     @newline_terminated : Bool
     @algorithm : Algorithm
 
     # Creates a new text diff from already tokenized slices.
-    def initialize(old_tokens : Array(String), new_tokens : Array(String),
+    def initialize(old_tokens : Array(T), new_tokens : Array(T),
                    algorithm : Algorithm = Algorithm::Myers,
                    newline_terminated : Bool = false)
       @old_tokens = old_tokens
@@ -105,32 +106,32 @@ module Similar
     end
 
     # Creates a diff of lines.
-    def self.from_lines(old : String, new : String) : TextDiff
+    def self.from_lines(old : String, new : String) : TextDiff(String)
       configure.diff_lines(old, new)
     end
 
     # Creates a diff of words.
-    def self.from_words(old : String, new : String) : TextDiff
+    def self.from_words(old : String, new : String) : TextDiff(String)
       configure.diff_words(old, new)
     end
 
     # Creates a diff of chars.
-    def self.from_chars(old : String, new : String) : TextDiff
+    def self.from_chars(old : String, new : String) : TextDiff(String)
       configure.diff_chars(old, new)
     end
 
     # Creates a diff of unicode words.
-    def self.from_unicode_words(old : String, new : String) : TextDiff
+    def self.from_unicode_words(old : String, new : String) : TextDiff(String)
       configure.diff_unicode_words(old, new)
     end
 
     # Creates a diff of graphemes.
-    def self.from_graphemes(old : String, new : String) : TextDiff
+    def self.from_graphemes(old : String, new : String) : TextDiff(String)
       configure.diff_graphemes(old, new)
     end
 
     # Creates a diff of arbitrary slices.
-    def self.from_slices(old : Array(String), new : Array(String)) : TextDiff
+    def self.from_slices(old : Array(U), new : Array(U)) : TextDiff(U) forall U
       configure.diff_slices(old, new)
     end
 
@@ -145,12 +146,12 @@ module Similar
     end
 
     # Returns all old tokens.
-    def old_tokens : Array(String)
+    def old_tokens : Array(T)
       @old_tokens
     end
 
     # Returns all new tokens.
-    def new_tokens : Array(String)
+    def new_tokens : Array(T)
       @new_tokens
     end
 
@@ -160,7 +161,7 @@ module Similar
     end
 
     # Iterates over the changes the op expands to.
-    def iter_changes(op : DiffOp) : ChangesIter(Array(String), Array(String), String)
+    def iter_changes(op : DiffOp) : ChangesIter(Array(T), Array(T), T)
       op.iter_changes(@old_tokens, @new_tokens)
     end
 
@@ -175,13 +176,13 @@ module Similar
     end
 
     # Flattens out the diff into all changes.
-    def iter_all_changes : AllChangesIter(Array(String), Array(String), String)
-      AllChangesIter(Array(String), Array(String), String).new(@old_tokens, @new_tokens, @ops)
+    def iter_all_changes : AllChangesIter(Array(T), Array(T), T)
+      AllChangesIter(Array(T), Array(T), T).new(@old_tokens, @new_tokens, @ops)
     end
 
     # Returns a unified diff formatter.
-    def unified_diff : UnifiedDiff
-      UnifiedDiff.new(self)
+    def unified_diff : UnifiedDiff(T)
+      UnifiedDiff(T).new(self)
     end
 
     # Iterates over inline changes for a diff operation.

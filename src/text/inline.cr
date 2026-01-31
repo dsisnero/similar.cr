@@ -45,8 +45,8 @@ module Similar
     end
 
     # Creates an InlineChange from a regular Change.
-    def self.from_change(change : Change(String)) : InlineChange
-      values = [{false, change.value}]
+    def self.from_change(change : Change(T)) : InlineChange forall T
+      values = [{false, change.value.to_s}]
       InlineChange.new(
         change.tag,
         change.old_index,
@@ -105,7 +105,7 @@ module Similar
   end
 
   # Iterates over inline changes for a diff operation.
-  def self.iter_inline_changes(diff : TextDiff, op : DiffOp) : Array(InlineChange)
+  def self.iter_inline_changes(diff : TextDiff(T), op : DiffOp) : Array(InlineChange) forall T
     tag, old_range, new_range = op.as_tag_tuple
 
     # For simple operations, just wrap changes
@@ -125,8 +125,8 @@ module Similar
       return diff.iter_changes(op).map { |change| InlineChange.from_change(change) }.to_a
     end
 
-    old_slice = diff.old_tokens[old_start]
-    new_slice = diff.new_tokens[new_start]
+    old_slice = diff.old_tokens[old_start].to_s
+    new_slice = diff.new_tokens[new_start].to_s
 
     # Create word lookups
     old_lookup = WordLookup.new(old_slice, old_start)
@@ -135,59 +135,50 @@ module Similar
     # Run diff on words
     word_ops = Similar.capture_diff_slices(Algorithm::Patience, old_lookup.words, new_lookup.words)
 
-    # Convert word ops to inline changes
-    old_index = old_start
-    new_index = new_start
-    result = [] of InlineChange
+    delete_values = [] of {Bool, String}
+    insert_values = [] of {Bool, String}
 
     word_ops.each do |word_op|
       case word_op.tag
       when DiffTag::Equal
         eq = word_op.as(DiffOp::Equal)
-        # Emit as single inline change with no emphasis
         slice = old_lookup.original_slice(eq.old_index, eq.len)
-        result << InlineChange.new(
-          ChangeTag::Equal,
-          old_index + eq.old_index,
-          new_index + eq.new_index,
-          [{false, slice}]
-        )
+        delete_values << {false, slice}
+        insert_values << {false, slice}
       when DiffTag::Delete
         del = word_op.as(DiffOp::Delete)
         slice = old_lookup.original_slice(del.old_index, del.old_len)
-        result << InlineChange.new(
-          ChangeTag::Delete,
-          old_index + del.old_index,
-          nil,
-          [{true, slice}]
-        )
+        delete_values << {true, slice}
       when DiffTag::Insert
         ins = word_op.as(DiffOp::Insert)
         slice = new_lookup.original_slice(ins.new_index, ins.new_len)
-        result << InlineChange.new(
-          ChangeTag::Insert,
-          nil,
-          new_index + ins.new_index,
-          [{true, slice}]
-        )
+        insert_values << {true, slice}
       when DiffTag::Replace
         rep = word_op.as(DiffOp::Replace)
-        # For replace at word level, emit delete then insert
         old_slice = old_lookup.original_slice(rep.old_index, rep.old_len)
         new_slice = new_lookup.original_slice(rep.new_index, rep.new_len)
-        result << InlineChange.new(
-          ChangeTag::Delete,
-          old_index + rep.old_index,
-          nil,
-          [{true, old_slice}]
-        )
-        result << InlineChange.new(
-          ChangeTag::Insert,
-          nil,
-          new_index + rep.new_index,
-          [{true, new_slice}]
-        )
+        delete_values << {true, old_slice}
+        insert_values << {true, new_slice}
       end
+    end
+
+    result = [] of InlineChange
+    if !delete_values.empty?
+      result << InlineChange.new(
+        ChangeTag::Delete,
+        old_start,
+        nil,
+        delete_values
+      )
+    end
+
+    if !insert_values.empty?
+      result << InlineChange.new(
+        ChangeTag::Insert,
+        nil,
+        new_start,
+        insert_values
+      )
     end
 
     result

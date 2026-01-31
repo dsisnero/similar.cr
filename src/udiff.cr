@@ -76,14 +76,14 @@ module Similar
   # diff = TextDiff.from_lines(old_text, new_text)
   # puts diff.unified_diff.header("old.txt", "new.txt")
   # ```
-  class UnifiedDiff
-    @diff : TextDiff
+  class UnifiedDiff(T)
+    @diff : TextDiff(T)
     @context_radius : Int32
     @missing_newline_hint : Bool
     @header : Tuple(String, String)?
 
     # Creates a formatter from a text diff object.
-    def initialize(@diff : TextDiff)
+    def initialize(@diff : TextDiff(T))
       @context_radius = 3
       @missing_newline_hint = true
       @header = nil
@@ -127,9 +127,9 @@ module Similar
     end
 
     # Iterates over all hunks as configured.
-    def iter_hunks : Array(UnifiedDiffHunk)
+    def iter_hunks : Array(UnifiedDiffHunk(T))
       @diff.grouped_ops(@context_radius).map do |ops|
-        UnifiedDiffHunk.new(ops, @diff, @missing_newline_hint)
+        UnifiedDiffHunk(T).new(ops, @diff, @missing_newline_hint)
       end
     end
 
@@ -153,13 +153,13 @@ module Similar
   end
 
   # Unified diff hunk formatter.
-  class UnifiedDiffHunk
-    @diff : TextDiff
+  class UnifiedDiffHunk(T)
+    @diff : TextDiff(T)
     @ops : Array(DiffOp)
     @missing_newline_hint : Bool
 
     # Creates a new hunk for some operations.
-    def initialize(@ops : Array(DiffOp), @diff : TextDiff, @missing_newline_hint : Bool)
+    def initialize(@ops : Array(DiffOp), @diff : TextDiff(T), @missing_newline_hint : Bool)
     end
 
     # Returns the header for the hunk.
@@ -178,8 +178,8 @@ module Similar
     end
 
     # Iterates over all changes in a hunk.
-    def iter_changes : AllChangesIter(Array(String), Array(String), String)
-      AllChangesIter(Array(String), Array(String), String).new(
+    def iter_changes : AllChangesIter(Array(T), Array(T), T)
+      AllChangesIter(Array(T), Array(T), T).new(
         @diff.old_tokens, @diff.new_tokens, @ops
       )
     end
@@ -191,7 +191,7 @@ module Similar
           io << header << '\n'
         end
         tag = change.tag.to_char
-        value = change.value
+        value = change.value.to_s
         io << tag << value
         if !@diff.newline_terminated
           io << '\n'

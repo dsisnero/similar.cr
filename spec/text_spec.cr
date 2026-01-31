@@ -150,6 +150,21 @@ describe Similar::TextDiff do
     changes[3].value.should eq("baz")
   end
 
+  it "supports generic slices with StringWrapper" do
+    old = [Similar::StringWrapper.new("foo"), Similar::StringWrapper.new("bar")]
+    new = [Similar::StringWrapper.new("foo"), Similar::StringWrapper.new("baz")]
+    diff = Similar::TextDiff.from_slices(old, new)
+    changes = diff.iter_all_changes.to_a
+
+    changes.size.should eq(3)
+    changes[0].tag.should eq(Similar::ChangeTag::Equal)
+    changes[0].value.to_s.should eq("foo")
+    changes[1].tag.should eq(Similar::ChangeTag::Delete)
+    changes[1].value.to_s.should eq("bar")
+    changes[2].tag.should eq(Similar::ChangeTag::Insert)
+    changes[2].value.to_s.should eq("baz")
+  end
+
   it "test_captured_ops" do
     diff = Similar::TextDiff.from_lines(
       "Hello World\nsome stuff here\nsome more stuff here\n",
