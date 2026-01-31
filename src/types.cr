@@ -86,6 +86,24 @@ module Similar
     def empty? : Bool
       old_range.begin == old_range.end && new_range.begin == new_range.end
     end
+
+    # Shifts the operation left by adjusting indices.
+    abstract def shift_left(adjust : Int32) : Nil
+
+    # Shifts the operation right by adjusting indices.
+    abstract def shift_right(adjust : Int32) : Nil
+
+    # Grows the operation on the left.
+    abstract def grow_left(adjust : Int32) : Nil
+
+    # Grows the operation on the right.
+    abstract def grow_right(adjust : Int32) : Nil
+
+    # Shrinks the operation on the left.
+    abstract def shrink_left(adjust : Int32) : Nil
+
+    # Shrinks the operation on the right.
+    abstract def shrink_right(adjust : Int32) : Nil
   end
 
   # A segment is equal.
@@ -111,6 +129,47 @@ module Similar
 
     def apply_to_hook(d : DiffHook) : Nil
       d.equal(@old_index, @new_index, @len)
+    end
+
+    def shift_left(adjust : Int32) : Nil
+      apply_adjust(adjust, true, 0, false)
+    end
+
+    def shift_right(adjust : Int32) : Nil
+      apply_adjust(adjust, false, 0, false)
+    end
+
+    def grow_left(adjust : Int32) : Nil
+      apply_adjust(adjust, true, adjust, false)
+    end
+
+    def grow_right(adjust : Int32) : Nil
+      apply_adjust(0, false, adjust, false)
+    end
+
+    def shrink_left(adjust : Int32) : Nil
+      apply_adjust(0, false, adjust, true)
+    end
+
+    def shrink_right(adjust : Int32) : Nil
+      apply_adjust(adjust, false, adjust, true)
+    end
+
+    private def apply_adjust(offset_delta : Int32, offset_subtract : Bool,
+                             len_delta : Int32, len_subtract : Bool) : Nil
+      if offset_subtract
+        @old_index -= offset_delta
+        @new_index -= offset_delta
+      else
+        @old_index += offset_delta
+        @new_index += offset_delta
+      end
+
+      if len_subtract
+        @len -= len_delta
+      else
+        @len += len_delta
+      end
     end
 
     def_equals_and_hash @old_index, @new_index, @len
@@ -141,6 +200,47 @@ module Similar
       d.delete(@old_index, @old_len, @new_index)
     end
 
+    def shift_left(adjust : Int32) : Nil
+      apply_adjust(adjust, true, 0, false)
+    end
+
+    def shift_right(adjust : Int32) : Nil
+      apply_adjust(adjust, false, 0, false)
+    end
+
+    def grow_left(adjust : Int32) : Nil
+      apply_adjust(adjust, true, adjust, false)
+    end
+
+    def grow_right(adjust : Int32) : Nil
+      apply_adjust(0, false, adjust, false)
+    end
+
+    def shrink_left(adjust : Int32) : Nil
+      apply_adjust(0, false, adjust, true)
+    end
+
+    def shrink_right(adjust : Int32) : Nil
+      apply_adjust(adjust, false, adjust, true)
+    end
+
+    private def apply_adjust(offset_delta : Int32, offset_subtract : Bool,
+                             len_delta : Int32, len_subtract : Bool) : Nil
+      if offset_subtract
+        @old_index -= offset_delta
+        @new_index -= offset_delta
+      else
+        @old_index += offset_delta
+        @new_index += offset_delta
+      end
+
+      if len_subtract
+        @old_len -= len_delta
+      else
+        @old_len += len_delta
+      end
+    end
+
     def_equals_and_hash @old_index, @old_len, @new_index
   end
 
@@ -167,6 +267,47 @@ module Similar
 
     def apply_to_hook(d : DiffHook) : Nil
       d.insert(@old_index, @new_index, @new_len)
+    end
+
+    def shift_left(adjust : Int32) : Nil
+      apply_adjust(adjust, true, 0, false)
+    end
+
+    def shift_right(adjust : Int32) : Nil
+      apply_adjust(adjust, false, 0, false)
+    end
+
+    def grow_left(adjust : Int32) : Nil
+      apply_adjust(adjust, true, adjust, false)
+    end
+
+    def grow_right(adjust : Int32) : Nil
+      apply_adjust(0, false, adjust, false)
+    end
+
+    def shrink_left(adjust : Int32) : Nil
+      apply_adjust(0, false, adjust, true)
+    end
+
+    def shrink_right(adjust : Int32) : Nil
+      apply_adjust(adjust, false, adjust, true)
+    end
+
+    private def apply_adjust(offset_delta : Int32, offset_subtract : Bool,
+                             len_delta : Int32, len_subtract : Bool) : Nil
+      if offset_subtract
+        @old_index -= offset_delta
+        @new_index -= offset_delta
+      else
+        @old_index += offset_delta
+        @new_index += offset_delta
+      end
+
+      if len_subtract
+        @new_len -= len_delta
+      else
+        @new_len += len_delta
+      end
     end
 
     def_equals_and_hash @old_index, @new_index, @new_len
@@ -196,6 +337,49 @@ module Similar
 
     def apply_to_hook(d : DiffHook) : Nil
       d.replace(@old_index, @old_len, @new_index, @new_len)
+    end
+
+    def shift_left(adjust : Int32) : Nil
+      apply_adjust(adjust, true, 0, false)
+    end
+
+    def shift_right(adjust : Int32) : Nil
+      apply_adjust(adjust, false, 0, false)
+    end
+
+    def grow_left(adjust : Int32) : Nil
+      apply_adjust(adjust, true, adjust, false)
+    end
+
+    def grow_right(adjust : Int32) : Nil
+      apply_adjust(0, false, adjust, false)
+    end
+
+    def shrink_left(adjust : Int32) : Nil
+      apply_adjust(0, false, adjust, true)
+    end
+
+    def shrink_right(adjust : Int32) : Nil
+      apply_adjust(adjust, false, adjust, true)
+    end
+
+    private def apply_adjust(offset_delta : Int32, offset_subtract : Bool,
+                             len_delta : Int32, len_subtract : Bool) : Nil
+      if offset_subtract
+        @old_index -= offset_delta
+        @new_index -= offset_delta
+      else
+        @old_index += offset_delta
+        @new_index += offset_delta
+      end
+
+      if len_subtract
+        @old_len -= len_delta
+        @new_len -= len_delta
+      else
+        @old_len += len_delta
+        @new_len += len_delta
+      end
     end
 
     def_equals_and_hash @old_index, @old_len, @new_index, @new_len
