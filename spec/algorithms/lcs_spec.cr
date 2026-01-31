@@ -1,5 +1,29 @@
 require "../spec_helper"
 
+class HasRunFinishLcs < Similar::Algorithms::DiffHook
+  @called = false
+
+  def called? : Bool
+    @called
+  end
+
+  def equal(old_index : Int32, new_index : Int32, len : Int32) : Nil
+  end
+
+  def delete(old_index : Int32, old_len : Int32, new_index : Int32) : Nil
+  end
+
+  def insert(old_index : Int32, new_index : Int32, new_len : Int32) : Nil
+  end
+
+  def replace(old_index : Int32, old_len : Int32, new_index : Int32, new_len : Int32) : Nil
+  end
+
+  def finish : Nil
+    @called = true
+  end
+end
+
 describe Similar::Algorithms::Lcs do
   it "test_diff" do
     a = [0, 1, 2, 3, 4]
@@ -10,7 +34,7 @@ describe Similar::Algorithms::Lcs do
     ops = d.inner.ops
 
     ops.size.should eq(3)
-    
+
     ops[0].should be_a(Similar::DiffOp::Equal)
     ops[0].as(Similar::DiffOp::Equal).old_index.should eq(0)
     ops[0].as(Similar::DiffOp::Equal).new_index.should eq(0)
@@ -37,7 +61,7 @@ describe Similar::Algorithms::Lcs do
     ops = d.inner.ops
 
     ops.size.should eq(4)
-    
+
     ops[0].should be_a(Similar::DiffOp::Equal)
     ops[0].as(Similar::DiffOp::Equal).old_index.should eq(0)
     ops[0].as(Similar::DiffOp::Equal).new_index.should eq(0)
@@ -128,5 +152,20 @@ describe Similar::Algorithms::Lcs do
     ops[1].as(Similar::DiffOp::Insert).new_len.should eq(1)
   end
 
+  it "test_finish_called" do
+    d = HasRunFinishLcs.new
+    slice = [1, 2]
+    slice2 = [1, 2, 3]
+    Similar::Algorithms::Lcs.diff(slice, 0...slice.size, slice2, 0...slice2.size, d)
+    d.called?.should be_true
 
+    d = HasRunFinishLcs.new
+    Similar::Algorithms::Lcs.diff(slice, 0...slice.size, slice, 0...slice.size, d)
+    d.called?.should be_true
+
+    d = HasRunFinishLcs.new
+    empty_slice = [] of Int32
+    Similar::Algorithms::Lcs.diff(empty_slice, 0...empty_slice.size, empty_slice, 0...empty_slice.size, d)
+    d.called?.should be_true
+  end
 end

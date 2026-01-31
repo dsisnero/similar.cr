@@ -1,5 +1,29 @@
 require "../spec_helper"
 
+class HasRunFinish < Similar::Algorithms::DiffHook
+  @called = false
+
+  def called? : Bool
+    @called
+  end
+
+  def equal(old_index : Int32, new_index : Int32, len : Int32) : Nil
+  end
+
+  def delete(old_index : Int32, old_len : Int32, new_index : Int32) : Nil
+  end
+
+  def insert(old_index : Int32, new_index : Int32, new_len : Int32) : Nil
+  end
+
+  def replace(old_index : Int32, old_len : Int32, new_index : Int32, new_len : Int32) : Nil
+  end
+
+  def finish : Nil
+    @called = true
+  end
+end
+
 describe Similar::Algorithms::Myers do
   it "test_find_middle_snake" do
     a = "ABCABBA".bytes
@@ -23,7 +47,7 @@ describe Similar::Algorithms::Myers do
     ops = d.inner.ops
 
     ops.size.should eq(3)
-    
+
     # Expected: Equal(0,0,3), Replace(3,1,3,1), Equal(4,4,1)
     ops[0].should be_a(Similar::DiffOp::Equal)
     ops[0].as(Similar::DiffOp::Equal).old_index.should eq(0)
@@ -51,7 +75,7 @@ describe Similar::Algorithms::Myers do
     ops = d.inner.ops
 
     ops.size.should eq(4)
-    
+
     # Expected from snapshot:
     # Equal(0,0,3), Replace(3,1,3,2), Equal(4,5,2), Replace(6,2,7,1)
     ops[0].should be_a(Similar::DiffOp::Equal)
@@ -86,7 +110,7 @@ describe Similar::Algorithms::Myers do
     ops = d.ops
 
     ops.size.should eq(5)
-    
+
     # Expected from snapshot:
     # Equal(0,0,2), Delete(2,1,2), Equal(3,2,2), Insert(5,4,1), Insert(5,5,1)
     ops[0].should be_a(Similar::DiffOp::Equal)
@@ -115,6 +139,22 @@ describe Similar::Algorithms::Myers do
     ops[4].as(Similar::DiffOp::Insert).new_len.should eq(1)
   end
 
+  it "test_finish_called" do
+    d = HasRunFinish.new
+    slice = [1, 2]
+    slice2 = [1, 2, 3]
+    Similar::Algorithms::Myers.diff(slice, 0...slice.size, slice2, 0...slice2.size, d)
+    d.called?.should be_true
+
+    d = HasRunFinish.new
+    Similar::Algorithms::Myers.diff(slice, 0...slice.size, slice, 0...slice.size, d)
+    d.called?.should be_true
+
+    d = HasRunFinish.new
+    empty_slice = [] of Int32
+    Similar::Algorithms::Myers.diff(empty_slice, 0...empty_slice.size, empty_slice, 0...empty_slice.size, d)
+    d.called?.should be_true
+  end
+
   # TODO: test_deadline_reached - needs deadline support implementation
-  # TODO: test_finish_called - needs custom DiffHook implementation
 end
