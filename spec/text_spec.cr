@@ -389,4 +389,31 @@ describe Similar::TextDiff do
     changes[7].new_index.should be_nil
     changes[7].values.should eq([{false, "and more stuff"}])
   end
+
+  describe "get_close_matches" do
+    it "finds close matches" do
+      matches = Similar.get_close_matches("appel", ["ape", "apple", "peach", "puppy"], 3, 0.6)
+      matches.should eq(["apple", "ape"])
+    end
+
+    it "respects cutoff and n parameters" do
+      matches = Similar.get_close_matches(
+        "hulo",
+        ["hi", "hulu", "hali", "hoho", "amaz", "zulo", "blah", "hopp", "uulo", "aulo"],
+        5,
+        0.7
+      )
+      matches.should eq(["aulo", "hulu", "uulo", "zulo"])
+    end
+
+    it "returns empty array when n <= 0" do
+      matches = Similar.get_close_matches("test", ["test"], 0, 0.5)
+      matches.should eq([] of String)
+    end
+
+    it "returns empty array when no possibilities" do
+      matches = Similar.get_close_matches("test", [] of String, 3, 0.5)
+      matches.should eq([] of String)
+    end
+  end
 end

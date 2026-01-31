@@ -192,4 +192,58 @@ module Similar
       Similar.iter_inline_changes(self, op)
     end
   end
+
+  # Return a list of the best "good enough" matches.
+  #
+  # *word* is a sequence for which close matches are desired (typically a
+  # string). *possibilities* is a list of sequences against which to match
+  # *word* (typically a list of strings). *n* (default 3) is the maximum
+  # number of close matches to return; *n* must be greater than 0. *cutoff*
+  # (default 0.6) is a float in the range [0, 1]. Possibilities that don't
+  # score at least that similar to *word* are ignored.
+  #
+  # ```
+  # require "similar"
+  #
+  # matches = Similar.get_close_matches("appel", ["ape", "apple", "peach", "puppy"], 3, 0.6)
+  # matches.should eq(["apple", "ape"])
+  # ```
+  #
+  # Requires the `text` feature.
+  def self.get_close_matches(word : String, possibilities : Array(String), n : Int32, cutoff : Float32) : Array(String)
+    return [] of String if n <= 0 || possibilities.empty?
+
+    matches = [] of {Float32, String}
+    seq1 = Text.tokenize_chars(word)
+    quick_ratio = Text::QuickSeqRatio.new(seq1)
+
+    possibilities.each do |possibility|
+      seq2 = Text.tokenize_chars(possibility)
+
+      # Quick rejection using upper bound
+      if Text.upper_seq_ratio(seq1, seq2) < cutoff || quick_ratio.calc(seq2) < cutoff
+        next
+      end
+
+      diff = TextDiff.from_slices(seq1, seq2)
+      ratio = diff.ratio
+      if ratio >= cutoff
+        matches.push({ratio, possibility})
+      end
+    end
+
+    # Sort by ratio descending, then by word ascending for equal ratios
+    matches.sort! do |a, b|
+      ratio_a, word_a = a
+      ratio_b, word_b = b
+      if ratio_a != ratio_b
+        ratio_b <=> ratio_a # descending
+      else
+        word_a <=> word_b # ascending
+      end
+    end
+
+    # Take first n matches
+    matches.first(n).map(&.[1])
+  end
 end
