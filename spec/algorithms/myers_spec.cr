@@ -155,6 +155,4 @@ describe Similar::Algorithms::Myers do
     Similar::Algorithms::Myers.diff(empty_slice, 0...empty_slice.size, empty_slice, 0...empty_slice.size, d)
     d.called?.should be_true
   end
-
-  # TODO: test_deadline_reached - needs deadline support implementation
 end
