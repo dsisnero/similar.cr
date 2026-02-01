@@ -29,6 +29,9 @@ require "./iter"
 # Load text diffing
 require "./text/mod"
 
+# Load utilities
+require "./utils"
+
 module Similar
   VERSION = "0.1.0"
 end
