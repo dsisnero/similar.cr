@@ -1,11 +1,14 @@
 # Unified diff functionality.
 #
 # This module provides unified diff formatting for text diffs.
+require "json"
 require "./text/utils"
 
 module Similar
   # Helper to display missing newline hint.
   struct MissingNewlineHint
+    include JSON::Serializable
+
     def initialize(@show : Bool)
     end
 
@@ -18,6 +21,7 @@ module Similar
 
   # Represents a range in a unified diff hunk.
   struct UnifiedDiffHunkRange
+    include JSON::Serializable
     getter start : Int32
     getter end : Int32
 
@@ -41,6 +45,7 @@ module Similar
 
   # Unified diff hunk header.
   struct UnifiedHunkHeader
+    include JSON::Serializable
     getter old_range : UnifiedDiffHunkRange
     getter new_range : UnifiedDiffHunkRange
 

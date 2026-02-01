@@ -1,3 +1,5 @@
+require "json"
+
 module Similar
   # An enum representing a diffing algorithm.
   enum Algorithm
@@ -108,6 +110,7 @@ module Similar
 
   # A segment is equal.
   class DiffOp::Equal < DiffOp
+    include JSON::Serializable
     getter old_index : Int32
     getter new_index : Int32
     getter len : Int32
@@ -177,6 +180,7 @@ module Similar
 
   # A segment was deleted.
   class DiffOp::Delete < DiffOp
+    include JSON::Serializable
     getter old_index : Int32
     getter old_len : Int32
     getter new_index : Int32
@@ -246,6 +250,7 @@ module Similar
 
   # A segment was inserted.
   class DiffOp::Insert < DiffOp
+    include JSON::Serializable
     getter old_index : Int32
     getter new_index : Int32
     getter new_len : Int32
@@ -315,6 +320,7 @@ module Similar
 
   # A segment was replaced.
   class DiffOp::Replace < DiffOp
+    include JSON::Serializable
     getter old_index : Int32
     getter old_len : Int32
     getter new_index : Int32
@@ -390,6 +396,7 @@ module Similar
   # This type exists so that it's more convenient to work with textual differences as
   # the underlying `DiffOp` encodes a group of changes.
   class Change(T)
+    include JSON::Serializable
     getter tag : ChangeTag
     getter old_index : Int32?
     getter new_index : Int32?

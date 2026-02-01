@@ -1,3 +1,4 @@
+require "json"
 require "../types"
 require "./utils"
 
@@ -6,6 +7,7 @@ module Similar
   #
   # This is like `Change` but with inline highlight info.
   class InlineChange
+    include JSON::Serializable
     @tag : ChangeTag
     @old_index : Int32?
     @new_index : Int32?
