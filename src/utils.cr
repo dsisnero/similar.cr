@@ -1,4 +1,6 @@
 require "./types"
+require "./common"
+require "./text/mod"
 
 module Similar::Utils
   # Remaps token slice ranges back to the original source.
@@ -72,5 +74,74 @@ module Similar::Utils
         [] of {ChangeTag, T}
       end
     end
+  end
+
+  # Shortcut for diffing two slices.
+  def self.diff_slices(alg : Algorithm, old : Array(T), new : Array(T)) : Array({ChangeTag, Array(T)}) forall T
+    ops = Similar.capture_diff_slices(alg, old, new)
+    changes = [] of {ChangeTag, Array(T)}
+    ops.each do |op|
+      tag, old_range, new_range = op.as_tag_tuple
+      case tag
+      when DiffTag::Equal
+        changes << {ChangeTag::Equal, old[old_range]}
+      when DiffTag::Insert
+        changes << {ChangeTag::Insert, new[new_range]}
+      when DiffTag::Delete
+        changes << {ChangeTag::Delete, old[old_range]}
+      when DiffTag::Replace
+        changes << {ChangeTag::Delete, old[old_range]}
+        changes << {ChangeTag::Insert, new[new_range]}
+      end
+    end
+    changes
+  end
+
+  # Diff lines for strings.
+  def self.diff_lines(alg : Algorithm, old : String, new : String) : Array({ChangeTag, String})
+    diff = TextDiff.configure.algorithm(alg).diff_lines(old, new)
+    diff.iter_all_changes.map { |change| {change.tag, change.value} }.to_a
+  end
+
+  # Diff lines for bytes.
+  def self.diff_lines(alg : Algorithm, old : Bytes, new : Bytes) : Array({ChangeTag, BytesWrapper})
+    diff = TextDiff.configure.algorithm(alg).diff_lines(old, new)
+    diff.iter_all_changes.map { |change| {change.tag, change.value} }.to_a
+  end
+
+  # Diff words for strings.
+  def self.diff_words(alg : Algorithm, old : String, new : String) : Array({ChangeTag, String})
+    diff = TextDiff.configure.algorithm(alg).diff_words(old, new)
+    diff.iter_all_changes.map { |change| {change.tag, change.value} }.to_a
+  end
+
+  # Diff words for bytes.
+  def self.diff_words(alg : Algorithm, old : Bytes, new : Bytes) : Array({ChangeTag, BytesWrapper})
+    diff = TextDiff.configure.algorithm(alg).diff_words(old, new)
+    diff.iter_all_changes.map { |change| {change.tag, change.value} }.to_a
+  end
+
+  # Diff characters for strings.
+  def self.diff_chars(alg : Algorithm, old : String, new : String) : Array({ChangeTag, String})
+    diff = TextDiff.configure.algorithm(alg).diff_chars(old, new)
+    diff.iter_all_changes.map { |change| {change.tag, change.value} }.to_a
+  end
+
+  # Diff bytes for bytes.
+  def self.diff_chars(alg : Algorithm, old : Bytes, new : Bytes) : Array({ChangeTag, BytesWrapper})
+    diff = TextDiff.configure.algorithm(alg).diff_chars(old, new)
+    diff.iter_all_changes.map { |change| {change.tag, change.value} }.to_a
+  end
+
+  # Diff unicode words for strings.
+  def self.diff_unicode_words(alg : Algorithm, old : String, new : String) : Array({ChangeTag, String})
+    diff = TextDiff.configure.algorithm(alg).diff_unicode_words(old, new)
+    diff.iter_all_changes.map { |change| {change.tag, change.value} }.to_a
+  end
+
+  # Diff graphemes for strings.
+  def self.diff_graphemes(alg : Algorithm, old : String, new : String) : Array({ChangeTag, String})
+    diff = TextDiff.configure.algorithm(alg).diff_graphemes(old, new)
+    diff.iter_all_changes.map { |change| {change.tag, change.value} }.to_a
   end
 end
