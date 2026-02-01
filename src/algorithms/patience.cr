@@ -1,6 +1,7 @@
 require "./utils"
 require "./myers"
 require "./replace"
+require "../deadline_support"
 require "../types"
 
 module Similar::Algorithms
@@ -30,7 +31,7 @@ module Similar::Algorithms
     # This diff is done with an optional deadline that defines the maximal
     # execution time permitted before it bails and falls back to an approximation.
     def self.diff_deadline(old, old_range : Range(Int32, Int32), new, new_range : Range(Int32, Int32),
-                           d : DiffHook, deadline = nil) : Nil
+                           d : DiffHook, deadline : Similar::DeadlineSupport::Instant? = nil) : Nil
       old_indexes = Similar::Algorithms.unique(old, old_range)
       new_indexes = Similar::Algorithms.unique(new, new_range)
 
@@ -51,12 +52,12 @@ module Similar::Algorithms
       @new_current : Int32
       @new_end : Int32
       @new_indexes : Array(Similar::Algorithms::UniqueItem(New))
-      @deadline : Nil
+      @deadline : Similar::DeadlineSupport::Instant?
 
       def initialize(@d : D, @old : Old, old_current : Int32, old_end : Int32,
                      @old_indexes : Array(Similar::Algorithms::UniqueItem(Old)),
                      @new : New, new_current : Int32, new_end : Int32,
-                     @new_indexes : Array(Similar::Algorithms::UniqueItem(New)), @deadline : Nil)
+                     @new_indexes : Array(Similar::Algorithms::UniqueItem(New)), @deadline : Similar::DeadlineSupport::Instant?)
         @old_current = old_current
         @old_end = old_end
         @new_current = new_current

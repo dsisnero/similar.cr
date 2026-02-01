@@ -1,4 +1,5 @@
 require "./utils"
+require "../deadline_support"
 require "../types"
 
 module Similar::Algorithms
@@ -76,7 +77,7 @@ module Similar::Algorithms
     # directions until furthest reaching forward and reverse paths starting at
     # opposing corners 'overlap'.
     def self.find_middle_snake(old, old_range : Range(Int32, Int32), new, new_range : Range(Int32, Int32),
-                               vf : V, vb : V, deadline = nil)
+                               vf : V, vb : V, deadline : Similar::DeadlineSupport::Instant? = nil)
       n = old_range.size
       m = new_range.size
 
@@ -96,7 +97,9 @@ module Similar::Algorithms
 
       (0...d_max).each do |d|
         # are we running for too long?
-        # TODO: deadline check
+        if Similar::DeadlineSupport.deadline_exceeded(deadline)
+          break
+        end
 
         # Forward path
         k = d
@@ -186,7 +189,7 @@ module Similar::Algorithms
 
     # The conquer part of a divide-and-conquer strategy.
     def self.conquer(d, old, old_range : Range(Int32, Int32), new, new_range : Range(Int32, Int32),
-                     vf : V, vb : V, deadline = nil)
+                     vf : V, vb : V, deadline : Similar::DeadlineSupport::Instant? = nil)
       # Check for common prefix
       common_prefix_len = Similar::Algorithms.common_prefix_len(old, old_range, new, new_range)
       if common_prefix_len > 0
@@ -247,7 +250,7 @@ module Similar::Algorithms
     # This diff is done with an optional deadline that defines the maximal
     # execution time permitted before it bails and falls back to an approximation.
     def self.diff_deadline(old, old_range : Range(Int32, Int32), new, new_range : Range(Int32, Int32),
-                           d : DiffHook, deadline = nil) : Nil
+                           d : DiffHook, deadline : Similar::DeadlineSupport::Instant? = nil) : Nil
       max_d = max_d(old_range.size, new_range.size)
       vf = V.new(max_d)
       vb = V.new(max_d)

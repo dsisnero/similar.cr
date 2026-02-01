@@ -1,4 +1,5 @@
 require "./utils"
+require "../deadline_support"
 require "../types"
 
 module Similar::Algorithms
@@ -26,7 +27,7 @@ module Similar::Algorithms
     # This diff is done with an optional deadline that defines the maximal
     # execution time permitted before it bails and falls back to an approximation.
     def self.diff_deadline(old, old_range : Range(Int32, Int32), new, new_range : Range(Int32, Int32),
-                           d : DiffHook, deadline = nil) : Nil
+                           d : DiffHook, deadline : Similar::DeadlineSupport::Instant? = nil) : Nil
       if Similar::Algorithms.is_empty_range(new_range)
         d.delete(old_range.begin, old_range.size, new_range.begin)
         d.finish
@@ -130,7 +131,7 @@ module Similar::Algorithms
     end
 
     private def self.make_table(old, old_range : Range(Int32, Int32), new, new_range : Range(Int32, Int32),
-                                deadline)
+                                deadline : Similar::DeadlineSupport::Instant?)
       old_len = old_range.size
       new_len = new_range.size
       table = Hash({Int32, Int32}, Int32).new
@@ -156,9 +157,8 @@ module Similar::Algorithms
       table
     end
 
-    private def self.deadline_exceeded(deadline)
-      # TODO: implement deadline check
-      false
+    private def self.deadline_exceeded(deadline : Similar::DeadlineSupport::Instant?)
+      Similar::DeadlineSupport.deadline_exceeded(deadline)
     end
   end
 end

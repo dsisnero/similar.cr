@@ -23,6 +23,9 @@ require "./algorithms/mod"
 # Load common utilities
 require "./common"
 
+# Load deadline support
+require "./deadline_support"
+
 # Load iterators
 require "./iter"
 
