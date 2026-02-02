@@ -1,18 +1,67 @@
 # similar
 
-TODO: Write a description here
+A Crystal port of the Rust `similar` diff library.
 
 ## Installation
 
-TODO: Write installation instructions here
+Add this to your application's `shard.yml`:
+
+```yaml
+dependencies:
+  similar:
+    github: dsisnero/similar
+```
+
+Then run:
+
+```bash
+shards install
+```
 
 ## Usage
 
-TODO: Write usage instructions here
+Basic text diff:
+
+```crystal
+require "similar"
+
+diff = Similar::TextDiff.from_lines("a\nb\n", "a\nB\n")
+diff.iter_all_changes.each do |change|
+  puts "#{change.tag}: #{change.value}"
+end
+```
+
+Unified diff:
+
+```crystal
+require "similar"
+
+old_text = "Hello\nWorld\n"
+new_text = "Hello\nCrystal\n"
+
+diff = Similar::TextDiff.from_lines(old_text, new_text)
+puts diff.unified_diff.header("old.txt", "new.txt").to_s
+```
+
+Close matches:
+
+```crystal
+require "similar"
+
+matches = Similar.get_close_matches("appel", ["ape", "apple", "peach", "puppy"], 3, 0.6)
+pp matches
+```
 
 ## Development
 
-TODO: Write development instructions here
+Run formatting, linting, and specs:
+
+```bash
+crystal tool format
+ameba --fix
+ameba
+crystal spec
+```
 
 ## Contributing
 
@@ -24,4 +73,4 @@ TODO: Write development instructions here
 
 ## Contributors
 
-- [your-name-here](https://github.com/dsisnero) - creator and maintainer
+- [dsisnero](https://github.com/dsisnero) - creator and maintainer
